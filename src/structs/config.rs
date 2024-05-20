@@ -10,9 +10,10 @@ pub struct Config {
     pub command_type: CommandType,
     pub has_header: bool,
     pub pretty: bool,
-    pub num_rows: Option<i32>,
+    pub num_rows: Option<usize>,
     pub column_name: Option<String>,
-    pub column_index: Option<i32>,
+    pub column_index: Option<usize>,
+    pub separator: u8,
 }
 
 impl Config {
@@ -21,6 +22,7 @@ impl Config {
         opts.optopt("f", "first", "show the N first lines", "10");
         opts.optopt("l", "last", "show the N last lines", "10");
         opts.optopt("n", "column-name", "show the column by name", "column_A");
+        opts.optopt("s", "sep", "separator", "','");
         opts.optopt("i", "column-index", "show the column by index", "4");
         opts.optflag("", "pretty", "pretty print dataframe");
         opts.optflag("", "no-header", "the file does not have a header row");
@@ -45,6 +47,12 @@ impl Config {
         let mut num_rows = None;
         let mut column_name = None;
         let mut column_index = None;
+
+        let separator = if matches.opt_present("s") {
+            matches.opt_str("s").unwrap().as_bytes()[0]
+        } else {
+            b','
+        };
 
         if matches.opt_present("h") {
             command_type = CommandType::Help;
@@ -74,6 +82,7 @@ impl Config {
             column_index,
             has_header,
             pretty,
+            separator,
         }
     }
 }
