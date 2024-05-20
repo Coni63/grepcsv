@@ -1,16 +1,19 @@
-extern crate getopts;
-use getopts::Options;
 use std::env;
 
 mod enums;
+mod logic;
 mod structs;
 
 use enums::commands::CommandType;
+use logic::{print_column, print_dataframe, print_usage};
 use structs::config::Config;
 
-fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} FILE [options]", program);
-    print!("{}", opts.usage(&brief));
+fn check_file_exists(config: &Config) {
+    if let Some(file) = &config.input_file {
+        if !std::path::Path::new(file).exists() {
+            panic!("File does not exist: {}", file);
+        }
+    }
 }
 
 fn main() {
@@ -18,14 +21,25 @@ fn main() {
 
     let config = Config::new(&args);
 
+    check_file_exists(&config);
+
     println!("{:?}", config);
 
     match config.command_type {
         CommandType::Help => {
-            print_usage(&args[0], Config::get_opts());
+            print_usage(&config);
         }
-        CommandType::Head => {}
-        CommandType::Tail => {}
-        CommandType::Column => {}
+        CommandType::Head => {
+            print_dataframe(&config);
+        }
+        CommandType::Tail => {
+            print_dataframe(&config);
+        }
+        CommandType::ColumnName => {
+            print_column(&config);
+        }
+        CommandType::ColumnIndex => {
+            print_column(&config);
+        }
     }
 }

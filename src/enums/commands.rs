@@ -2,6 +2,7 @@
 pub enum CommandType {
     Head,
     Tail,
-    Column,
+    ColumnName,
+    ColumnIndex,
     Help,
 }

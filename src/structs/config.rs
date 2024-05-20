@@ -8,6 +8,8 @@ pub struct Config {
     pub input_file: Option<String>,
 
     pub command_type: CommandType,
+    pub has_header: bool,
+    pub pretty: bool,
     pub num_rows: Option<i32>,
     pub column_name: Option<String>,
     pub column_index: Option<i32>,
@@ -20,6 +22,8 @@ impl Config {
         opts.optopt("l", "last", "show the N last lines", "10");
         opts.optopt("n", "column-name", "show the column by name", "column_A");
         opts.optopt("i", "column-index", "show the column by index", "4");
+        opts.optflag("", "pretty", "pretty print dataframe");
+        opts.optflag("", "no-header", "the file does not have a header row");
         opts.optflag("h", "help", "print this help menu");
         opts
     }
@@ -35,6 +39,8 @@ impl Config {
         };
 
         let input_file = matches.free.first().cloned();
+        let has_header = !matches.opt_present("no-header");
+        let pretty = matches.opt_present("pretty");
         let mut command_type = CommandType::Head;
         let mut num_rows = None;
         let mut column_name = None;
@@ -49,10 +55,13 @@ impl Config {
             command_type = CommandType::Tail;
             num_rows = matches.opt_str("l").map(|x| x.parse().unwrap());
         } else if matches.opt_present("n") {
-            command_type = CommandType::Column;
+            if !has_header {
+                panic!("Column name can only be used with files that have a header row");
+            }
+            command_type = CommandType::ColumnName;
             column_name = matches.opt_str("n");
         } else if matches.opt_present("i") {
-            command_type = CommandType::Column;
+            command_type = CommandType::ColumnIndex;
             column_index = matches.opt_str("i").map(|x| x.parse().unwrap());
         }
 
@@ -63,6 +72,8 @@ impl Config {
             num_rows,
             column_name,
             column_index,
+            has_header,
+            pretty,
         }
     }
 }
@@ -150,8 +161,21 @@ mod tests {
 
         assert_eq!(config.program, "my_program");
         assert_eq!(config.input_file.unwrap(), "filename".to_string());
-        assert_eq!(config.command_type, CommandType::Column);
+        assert_eq!(config.command_type, CommandType::ColumnName);
         assert_eq!(config.column_name.unwrap(), "column_A".to_string());
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_column_name_no_header() {
+        let args = vec![
+            "my_program".to_string(),
+            "-n".to_string(),
+            "column_A".to_string(),
+            "--no-header".to_string(),
+            "filename".to_string(),
+        ];
+        Config::new(&args);
     }
 
     #[test]
@@ -166,7 +190,7 @@ mod tests {
 
         assert_eq!(config.program, "my_program");
         assert_eq!(config.input_file.unwrap(), "filename".to_string());
-        assert_eq!(config.command_type, CommandType::Column);
+        assert_eq!(config.command_type, CommandType::ColumnIndex);
         assert_eq!(config.column_index.unwrap(), 4);
     }
 }
