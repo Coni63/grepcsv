@@ -3,6 +3,8 @@ use std::cmp::max;
 
 use crate::{enums::commands::CommandType, structs::config::Config};
 
+const MAX_WIDTH: usize = 20;
+
 pub fn print_dataframe(config: &Config) {
     let file = config.input_file.as_ref().unwrap();
 
@@ -101,7 +103,7 @@ fn print_clean(records: &Vec<csv::StringRecord>, header: Option<&csv::StringReco
         let mut s = String::from("|");
         let mut ul = String::from("+");
         for (field, width) in row.iter().zip(max_lengths.iter()) {
-            s += format!(" {:<width$} |", field, width = *width).as_str();
+            s += format!(" {:<width$} |", ellipsis(field, MAX_WIDTH), width = *width).as_str();
             ul += format!("{:-<width$}+", "", width = *width + 2).as_str();
         }
         println!("{}", s);
@@ -111,9 +113,17 @@ fn print_clean(records: &Vec<csv::StringRecord>, header: Option<&csv::StringReco
     for record in records.iter() {
         let mut s = String::from("|");
         for (field, width) in record.iter().zip(max_lengths.iter()) {
-            s += format!(" {:<width$} |", field, width = *width).as_str();
+            s += format!(" {:<width$} |", ellipsis(field, MAX_WIDTH), width = *width).as_str();
         }
         println!("{}", s.trim_end_matches(','));
+    }
+}
+
+fn ellipsis(s: &str, max_len: usize) -> String {
+    if s.len() > max_len {
+        format!("{}...", &s[..max_len - 3])
+    } else {
+        s.to_string()
     }
 }
 
@@ -139,10 +149,10 @@ fn get_width(records: &Vec<csv::StringRecord>, header: Option<&csv::StringRecord
         }
     }
 
-    // trucate the max length to 20
+    // trucate the max length to MAX_WIDTH
     for len in max_lengths.iter_mut() {
-        if *len > 20 {
-            *len = 20;
+        if *len > MAX_WIDTH {
+            *len = MAX_WIDTH;
         }
     }
 
