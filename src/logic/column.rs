@@ -91,9 +91,13 @@ pub fn print_column(config: &Config) {
         .collect::<csv::Result<Vec<csv::StringRecord>>>()
         .unwrap();
 
-    let header = match rdr.headers() {
-        Ok(row) => Some(row),
-        Err(_) => None,
+    let header = if config.has_header {
+        match rdr.headers() {
+            Ok(row) => Some(row),
+            Err(_) => None,
+        }
+    } else {
+        None
     };
 
     let column_index = match config.command_type {
@@ -173,6 +177,21 @@ mod tests {
             "-n".to_string(),
             "Proanth".to_string(),
             "--pretty".to_string(),
+            "testfile/wine.csv".to_string(),
+        ];
+        let config = Config::new(&args);
+
+        print_column(&config);
+    }
+
+    #[test]
+    fn test_column_pretty_no_header() {
+        let args = vec![
+            "my_program".to_string(),
+            "-i".to_string(),
+            "3".to_string(),
+            "--pretty".to_string(),
+            "--no-header".to_string(),
             "testfile/wine.csv".to_string(),
         ];
         let config = Config::new(&args);
